@@ -11,74 +11,78 @@ class Model:
         self._n_iterazioni = 0
         self._n_soluzioni = 0
         self._soluzioni = []
-        self._ricorsione({}, set(range(1, N * N + 1)), N)
+        # set di tutte le possibili celle
+        rimanenti = set()
+        for riga in range(N):
+            for colonna in range(N):
+                rimanenti.add((riga,colonna))
+        self._ricorsione([], rimanenti, N)
 
-    def _ricorsione(self, parziale: dict, rimanenti, N):
+    def _ricorsione(self, parziale, rimanenti, N):
         self._n_iterazioni += 1
         # caso terminale
         if len(parziale) == N * N:
-            # if self._is_soluzione(parziale, N):
             print(parziale)
             self._n_soluzioni += 1
             self._soluzioni.append(copy.deepcopy(parziale))
         # caso ricorsivo
         else:
-            for i in rimanenti:
-                # calcolo la riga e colonna della cella in cui inserire il prossimo numero
-                # e le uso come chiave per memorizzarlo nel dizionario parziale
-                row = len(parziale) // N
-                col = len(parziale) - row*N -1
-                new_col = col+1
-                new_row = row
-                if new_col >= N:
-                    new_col = 0
-                    new_row += 1
-                parziale[(new_row, new_col)] = i
+            for cella in rimanenti:
+                # per il prossimo numero, provo ad assegnare una delle celle libere rimaste
+                parziale.append(cella)
+
                 if self._is_soluzione_parziale(parziale, N):
                     nuovi_rimanenti = copy.deepcopy(rimanenti)
-                    nuovi_rimanenti.remove(i)
+                    nuovi_rimanenti.remove(cella)
                     self._ricorsione(parziale, nuovi_rimanenti, N)
-                parziale.pop((new_row, new_col))
+                parziale.pop()
 
 
 
     def _is_soluzione_parziale(self, parziale, N):
         numero_magico = N * (N * N + 1) / 2
-        # vincolo 1) righe
-        n_righe = len(parziale) // N
-        for row in range(n_righe):  # per ognuna delle N righe
+
+        # vincolo 1) verifica righe
+        for row in range(N):  # per ognuna delle N righe
             somma = 0
-            for key, value in parziale.items():
-                if key[0] == row:
-                    somma += value
-            if somma != numero_magico:
+            counter = 0
+            for i in range(len(parziale)):
+                if parziale[i][0] == row:
+                    somma += i+1
+                    counter += 1
+            if somma != numero_magico and counter == N:
                 return False
 
         # vincolo 2) colonne
-        n_col = max(len(parziale) - N * (N - 1), 0)
-        for col in range(n_col):
+        for col in range(N):  # per ognuna delle N righe
             somma = 0
-            for key, value in parziale.items():
-                if key[1] == col:
-                    somma += value
-            if somma != numero_magico:
+            counter = 0
+            for i in range(len(parziale)):
+                if parziale[i][1] == col:
+                    somma += i+1
+                    counter += 1
+            if somma != numero_magico and counter == N:
                 return False
 
-        # vincolo 3) diagonale 1. Da verificare solo se parziale ha lunghezza N*N
-        if len(parziale) == N * N:
-            somma = 0
-            for riga_col in range(N):
-                somma += parziale[(riga_col, riga_col)]
-            if somma != numero_magico:
-                return False
+        # vincolo 3) diagonale 1
+        somma = 0
+        counter = 0
+        for i in range(len(parziale)):
+            if parziale[i][0] == parziale[i][1]: #se riga==colonna la cella è sulla diagonale
+                somma += i+1
+                counter += 1
+        if somma != numero_magico and counter == N:
+            return False
 
         # vincolo 4) diagonale 2. Da verificare solo se sono arrivato ad inserire in parziale il primo elemento dell'ultima riga
-        if len(parziale) == N * (N - 1) + 1:
-            somma = 0
-            for riga_col in range(N):
-                somma += parziale[(riga_col, N - 1 - riga_col)]
-            if somma != numero_magico:
-                return False
+        somma = 0
+        counter = 0
+        for i in range(len(parziale)):
+            if parziale[i][0] == N-1-parziale[i][1]:  # se riga==colonna la cella è sulla diagonale
+                somma += i+1
+                counter += 1
+        if somma != numero_magico and counter == N:
+            return False
 
         # tutti vincoli soddisfatti
         return True
@@ -86,7 +90,11 @@ class Model:
     def stampa_soluzione(self, soluzione, N):
         print("----------")
         for row in range(N):
-            print([val for key,val in soluzione.items() if key[0]==row])
+            riga = [0 for i in range(N)] #lista di zeri
+            for i in range(N*N):
+                if soluzione[i][0] == row:
+                    riga[soluzione[i][1]] = i+1
+            print(riga)
         print("----------")
 
 
